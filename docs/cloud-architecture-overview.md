@@ -334,30 +334,17 @@ app.use(cors());
 
 ```mermaid
 graph TB
-    subgraph "Future: Production Architecture"
-        LB[Load Balancer]
-        
-        subgraph "Static Hosting"
-            CDN[CDN/Static Site<br/>React Build]
-        end
-        
-        subgraph "API Layer"
-            API1[Express API<br/>Instance 1]
-            API2[Express API<br/>Instance 2]
-        end
-        
-        subgraph "Data Layer"
-            DB[(PostgreSQL<br/>Persistent DB)]
-            Cache[(Redis<br/>Session Cache)]
-            S3[S3/Cloud Storage<br/>Receipt Images]
-        end
-        
-        subgraph "Auth"
-            Auth[Auth Service<br/>JWT Tokens]
-        end
-    end
+    Users[Users/Browsers]
+    LB[Load Balancer]
+    CDN[CDN - Static Assets<br/>React Build]
+    API1[Express API<br/>Instance 1]
+    API2[Express API<br/>Instance 2]
+    DB[(PostgreSQL<br/>Persistent Database)]
+    Cache[(Redis Cache<br/>Sessions)]
+    S3[Cloud Storage<br/>Receipt Images]
+    Auth[Auth Service<br/>JWT Tokens]
     
-    Users[Users] --> LB
+    Users --> LB
     LB --> CDN
     LB --> API1
     LB --> API2
@@ -366,7 +353,19 @@ graph TB
     API1 --> Cache
     API2 --> Cache
     API1 --> S3
+    API2 --> S3
+    API1 --> Auth
     API2 --> Auth
+    
+    classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+    classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    classDef database fill:#fef3c7,stroke:#eab308,stroke-width:2px
+    classDef infra fill:#f3f4f6,stroke:#6b7280,stroke-width:2px
+    
+    class CDN frontend
+    class API1,API2 backend
+    class DB,Cache,S3 database
+    class Users,LB,Auth infra
 ```
 
 **Planned Improvements:**
