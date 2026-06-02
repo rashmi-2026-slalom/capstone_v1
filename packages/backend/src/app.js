@@ -45,7 +45,10 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       items: '/api/items',
-      prices: '/api/prices (coming soon)'
+      prices: '/api/prices',
+      productSearch: '/api/products/search?q=<query>',
+      barcodeSearch: '/api/products/barcode/:code',
+      mcpSources: '/api/products/sources'
     }
   });
 });
@@ -329,6 +332,78 @@ app.delete('/api/prices/:id', (req, res) => {
   } catch (error) {
     console.error('Error deleting price:', error);
     res.status(500).json({ error: 'Failed to delete price' });
+  }
+});
+
+// ============================================
+// PRODUCT SEARCH ROUTES (MCP Integration)
+// ============================================
+
+const productSearchService = require('./services/mcp/productSearchService');
+
+// GET /api/products/search - Search for products across MCP sources
+app.get('/api/products/search', async (req, res) => {
+  try {
+    const { q, limit } = req.query;
+    
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({ 
+        error: 'Query parameter "q" is required (minimum 2 characters)' 
+      });
+    }
+    
+    const results = await productSearchService.searchProducts(q, {
+      limit: limit ? parseInt(limit) : 20
+    });
+    
+    res.json({
+      query: q,
+      count: results.length,
+      products: results
+    });
+  } catch (error) {
+    console.error('Error searching products:', error);
+    res.status(500).json({ error: 'Failed to search products' });
+  }
+});
+
+// GET /api/products/barcode/:code - Lookup product by barcode
+app.get('/api/products/barcode/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Barcode is required' });
+    }
+    
+    const product = await productSearchService.getProductByBarcode(code);
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json(product);
+  } catch (error) {
+    console.error('Error looking up barcode:', error);
+    res.status(500).json({ error: 'Failed to lookup barcode' });
+  }
+});
+
+// GET /api/products/sources - Get available MCP sources
+app.get('/api/products/sources', (req, res) => {
+  try {
+    const sources = productSearchService.getAvailableSources();
+    res.json({
+      sources,
+      summary: {
+        total: sources.length,
+        available: sources.filter(s => s.available).length,
+        unavailable: sources.filter(s => !s.available).length
+      }
+    });
+  } catch (error) {
+    console.error('Error getting MCP sources:', error);
+    res.status(500).json({ error: 'Failed to get sources' });
   }
 });
 

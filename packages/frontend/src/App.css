@@ -63,6 +63,13 @@ section h2 {
   min-width: 200px;
 }
 
+.help-text {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #6b7280;
+  font-style: italic;
+}
+
 input {
   width: 100%;
   padding: 10px 12px;

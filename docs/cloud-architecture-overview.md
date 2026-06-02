@@ -317,6 +317,127 @@ app.use(cors());
 
 ---
 
+## External API Integrations (Phased Approach)
+
+### Phase 1: Manual Entry Only (MVP - Current)
+No external APIs required. Users manually enter all data.
+
+### Phase 2: Product Database Integration (Future)
+
+```mermaid
+graph TB
+    subgraph "Frontend"
+        ItemForm[Item Entry Form<br/>with Autocomplete]
+        BarcodeScanner[Barcode Scanner<br/>Camera/Input]
+    end
+    
+    subgraph "Backend"
+        Express[Express API]
+        MCP[MCP Server<br/>Open Food Facts Integration]
+    end
+    
+    subgraph "External APIs"
+        OFF[Open Food Facts API<br/>Product Database<br/>2.8M+ products]
+    end
+    
+    ItemForm -->|Search query| Express
+    BarcodeScanner -->|Barcode number| Express
+    Express -->|Request via MCP| MCP
+    MCP -->|HTTP Request| OFF
+    OFF -->|Product data JSON| MCP
+    MCP -->|Formatted response| Express
+    Express -->|Autocomplete suggestions| ItemForm
+    Express -->|Product details| BarcodeScanner
+    
+    classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+    classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    classDef external fill:#fef3c7,stroke:#eab308,stroke-width:2px
+    
+    class ItemForm,BarcodeScanner frontend
+    class Express,MCP backend
+    class OFF external
+```
+
+**Integration Details:**
+
+**Open Food Facts API:**
+- **Purpose:** Product autocomplete, barcode lookup, product details
+- **Access:** Free, open-source, no API key required
+- **Data Provided:** Product names, barcodes (UPC/EAN), categories, images, nutrition
+- **Data NOT Provided:** Store-specific prices
+- **Rate Limits:** Fair use policy
+- **Documentation:** https://world.openfoodfacts.org/data
+
+**Model Context Protocol (MCP) Integration:**
+- MCP server acts as integration layer between Express and external APIs
+- Standardizes data exchange format
+- Handles API authentication and rate limiting
+- Enables future API additions without backend changes
+- Provides caching and request optimization
+
+**User Flow with Product Integration:**
+1. User starts typing item name → autocomplete suggestions from Open Food Facts
+2. User scans barcode → auto-populate product name and details
+3. User manually enters price for each store (no API for this)
+4. System tracks and compares prices as usual
+
+**Why Not Store Price APIs?**
+Major grocery chains do not offer public APIs:
+- Costco: No public API
+- Trader Joe's: No public API
+- Walmart: Partner-only API
+- Target: Partner-only API
+- Kroger: Limited developer API (requires approval)
+
+Pricing data is considered proprietary competitive information.
+
+### Phase 3: Receipt OCR Integration (Future)
+
+```mermaid
+graph TB
+    User[User Uploads<br/>Receipt Photo]
+    Frontend[React App]
+    Backend[Express API]
+    OCR[OCR Service<br/>Google Vision / Textract]
+    Parser[Receipt Parser<br/>Extract Items + Prices]
+    DB[(Database)]
+    
+    User -->|Upload image| Frontend
+    Frontend -->|POST /api/receipts| Backend
+    Backend -->|Image data| OCR
+    OCR -->|Raw text| Parser
+    Parser -->|Structured data| Backend
+    Backend -->|Review interface| Frontend
+    Frontend -->|User confirms/edits| Backend
+    Backend -->|Batch insert| DB
+    
+    classDef user fill:#f3f4f6,stroke:#6b7280,stroke-width:2px
+    classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+    classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px
+    classDef external fill:#fef3c7,stroke:#eab308,stroke-width:2px
+    
+    class User user
+    class Frontend frontend
+    class Backend,Parser backend
+    class OCR,DB external
+```
+
+**Technology Options:**
+- Google Cloud Vision API (paid, high accuracy)
+- AWS Textract (paid, receipt-specific features)
+- Azure Computer Vision (paid)
+- Tesseract OCR (open-source, free, moderate accuracy)
+
+**Workflow:**
+1. User photographs receipt
+2. Upload to backend
+3. OCR extracts text
+4. Parser identifies: store name, date, items, prices
+5. Present to user for verification/correction
+6. Batch create price entries
+
+---
+
 ## Current Limitations (MVP)
 
 1. **Data Persistence:** In-memory database - data lost on server restart
@@ -376,6 +497,10 @@ graph TB
 - Container deployment (Docker)
 - CI/CD pipeline
 - Multiple environment support (dev/staging/prod)
+- MCP server for external API integrations
+- Product database API (Open Food Facts)
+- Receipt OCR service integration
+- Barcode scanning capability
 
 ---
 
@@ -456,6 +581,13 @@ console.error('Error message', error);
 | Testing (Frontend) | Jest + React Testing Library | 29.7.0 | Unit/integration tests |
 | Testing (Backend) | Jest + Supertest | 29.7.0 | API tests |
 
+**Planned Additions (Phase 2+):**
+- MCP Server for external API integration
+- Open Food Facts API for product database
+- OCR Service (Google Vision / Textract / Tesseract)
+- Image storage (cloud bucket)
+- Camera/barcode scanning library
+
 ---
 
 ## Deployment Considerations
@@ -493,3 +625,4 @@ Cloud Provider (AWS/Azure/GCP/Vercel)
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | June 1, 2026 | Initial architecture documentation for MVP |
+| 1.1 | June 2, 2026 | Added phased API integration approach (MCP, Open Food Facts, OCR) |

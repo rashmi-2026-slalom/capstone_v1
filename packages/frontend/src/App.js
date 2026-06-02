@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import Autocomplete from './components/Autocomplete';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -261,6 +262,11 @@ function App() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const handleProductSelect = (product) => {
+    // When user selects a product from autocomplete, set it as the item name
+    setNewItemName(product.name);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -279,16 +285,20 @@ function App() {
           <h2>Add New Item</h2>
           <form onSubmit={handleAddItem}>
             <div className="form-group">
-              <input
-                type="text"
+              <Autocomplete
                 value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                placeholder="Item name (e.g., Organic Milk)"
-                required
+                onChange={setNewItemName}
+                onSelect={handleProductSelect}
+                placeholder="Start typing to search products... (e.g., Organic Milk)"
+                minChars={2}
+                debounceMs={300}
               />
             </div>
             <button type="submit" className="btn-primary">Add Item</button>
           </form>
+          <p className="help-text">
+            💡 Start typing to see product suggestions from our database, or enter any item name manually.
+          </p>
         </section>
 
         <section className="items-section">

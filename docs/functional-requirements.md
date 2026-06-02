@@ -44,15 +44,50 @@ A web application that helps users track and compare grocery prices across diffe
 4. View price trends over time to know if prices are going up or down
 5. Quickly add new items and prices with minimal typing
 
+## Implementation Phases
+
+### Phase 1: Manual Entry (MVP - Current Scope)
+- **FR-5.1**: Users manually enter all item names and price data
+- **FR-5.2**: Simple text input for item creation
+- **FR-5.3**: Manual data entry for all store prices
+
+**Rationale:** Most reliable, works with any store, legal and compliant, focuses on core value proposition.
+
+### Phase 2: Product Database Integration (Future)
+- **FR-6.1**: Integration with Open Food Facts API for product autocomplete
+- **FR-6.2**: Barcode scanning to auto-populate item details
+- **FR-6.3**: Product images and metadata from external database
+- **FR-6.4**: Consistent product naming across entries
+- **FR-6.5**: Model Context Protocol (MCP) server for API integration
+
+**Benefits:**
+- Better UX with autocomplete (less typing)
+- Barcode support for mobile app
+- Consistent product identification
+- Still flexible pricing (manual per store)
+
+**Note:** Major grocery chains (Costco, Trader Joe's, Walmart, Target, Kroger) do not offer public APIs for pricing data. Product databases provide item information only, not store-specific prices.
+
+### Phase 3: Receipt Scanning (Future)
+- **FR-7.1**: Upload receipt photos
+- **FR-7.2**: OCR extraction of items and prices
+- **FR-7.3**: Manual verification/correction workflow
+- **FR-7.4**: Batch price entry from receipt
+
+**Technology Options:**
+- Google Cloud Vision API
+- AWS Textract
+- Open-source Tesseract OCR
+
 ## Out of Scope (Future Enhancements)
-- Receipt photo upload with OCR
-- Barcode scanning
 - Shopping list generation
 - Budget tracking
 - Price alerts/notifications
 - Multi-user support / user accounts
-- Mobile app
+- Native mobile app
 - Store location/distance integration
+- Community-shared pricing data
+- Price prediction/trend forecasting
 
 ## Technical Requirements
 - React frontend with responsive design
