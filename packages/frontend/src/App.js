@@ -441,7 +441,7 @@ function App() {
                       {selectedItemForPrice === item.id && (
                         <div className="prices-section">
                           <div className="prices-header">
-                            <h4>Price History</h4>
+                            <h4>Price Tracking</h4>
                             <button
                               onClick={() => handleAddPriceClick(item.id)}
                               className="btn-primary btn-small"

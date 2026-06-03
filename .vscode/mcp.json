@@ -16,11 +16,19 @@
     "kroger": {
       "name": "Kroger Developer API",
       "status": "enabled",
-      "environment": "certification",
+      "environment": "production",
       "provides": "Real-time pricing, product search, store locations",
       "pricing": true,
       "requiresCredentials": true,
       "credentialsInstructions": "See docs/kroger-api-setup.md"
+    },
+    "walmart": {
+      "name": "Walmart Open API",
+      "status": "pending-setup",
+      "provides": "Real-time pricing, product search",
+      "pricing": true,
+      "requiresCredentials": true,
+      "credentialsInstructions": "Get API key from https://developer.walmart.com/"
     },
     "instacart": {
       "name": "Instacart Partner API",

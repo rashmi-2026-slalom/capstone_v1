@@ -20,7 +20,7 @@ class MCPServer {
     this.tools = [
       {
         name: 'searchProducts',
-        description: 'Search for grocery products across multiple data sources (OpenFoodFacts, Kroger, Instacart). Returns product names, barcodes, brands, images, and categories.',
+        description: 'Search for grocery products across multiple data sources (OpenFoodFacts, Kroger, Walmart, Instacart). Returns product names, barcodes, brands, images, pricing, and categories.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -85,7 +85,7 @@ class MCPServer {
       {
         uri: 'product://sources',
         name: 'Available Product Sources',
-        description: 'List of product data sources (OpenFoodFacts, Kroger, Instacart) and their availability',
+        description: 'List of product data sources (OpenFoodFacts, Kroger, Walmart, Instacart) and their availability',
         mimeType: 'application/json'
       }
     ];

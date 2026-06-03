@@ -1,5 +1,6 @@
 const OpenFoodFactsClient = require('./openFoodFactsClient');
 const KrogerClient = require('./krogerClient');
+const WalmartClient = require('./walmartClient');
 const InstacartClient = require('./instacartClient');
 
 /**
@@ -13,6 +14,7 @@ class ProductSearchService {
     this.sources = {
       openFoodFacts: new OpenFoodFactsClient(),
       kroger: new KrogerClient(),
+      walmart: new WalmartClient(),
       instacart: new InstacartClient()
     };
 
