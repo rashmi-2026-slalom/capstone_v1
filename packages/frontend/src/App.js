@@ -185,10 +185,31 @@ function App() {
     try {
       // Search with higher limit to increase chances of finding Kroger products
       const response = await fetch(`/api/products/search?q=${encodeURIComponent(itemName)}&limit=20`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch Kroger price');
+        // API error - could be Kroger API down or backend issue
+        setKrogerPrice({ 
+          error: true, 
+          message: 'Kroger API temporarily unavailable',
+          canRetry: true 
+        });
+        return;
       }
+      
       const data = await response.json();
+      
+      // Check if we have any products from Kroger
+      const hasKrogerProducts = data.products.some(p => p.source === 'Kroger');
+      
+      if (!hasKrogerProducts) {
+        // Kroger API might be down or not responding
+        setKrogerPrice({ 
+          error: true, 
+          message: 'Kroger service currently unavailable',
+          canRetry: true 
+        });
+        return;
+      }
       
       // Find first Kroger product with a price
       const krogerProduct = data.products.find(p => p.source === 'Kroger' && p.price);
@@ -203,11 +224,19 @@ function App() {
           promo_price: krogerProduct.promo_price
         });
       } else {
-        setKrogerPrice({ notFound: true });
+        // Kroger API is working but no matching products found
+        setKrogerPrice({ 
+          notFound: true,
+          message: 'No Kroger price available for this item' 
+        });
       }
     } catch (err) {
       console.error('Error fetching Kroger price:', err);
-      setKrogerPrice({ error: true, message: err.message });
+      setKrogerPrice({ 
+        error: true, 
+        message: 'Network error - please check your connection',
+        canRetry: true 
+      });
     } finally {
       setLoadingKrogerPrice(false);
     }
@@ -464,13 +493,35 @@ function App() {
 
                                 {krogerPrice && krogerPrice.notFound && (
                                   <div className="kroger-not-found">
-                                    ℹ️ Kroger price not available. Please enter manually below.
+                                    <span className="status-icon">ℹ️</span>
+                                    <span className="status-message">
+                                      {krogerPrice.message || 'Kroger price not available for this item.'}
+                                      <br />
+                                      Please enter manually below.
+                                    </span>
                                   </div>
                                 )}
 
                                 {krogerPrice && krogerPrice.error && (
                                   <div className="kroger-error">
-                                    ⚠️ Error fetching Kroger price. Please enter manually below.
+                                    <div className="error-content">
+                                      <span className="status-icon">⚠️</span>
+                                      <span className="status-message">
+                                        <strong>{krogerPrice.message || 'Error fetching Kroger price'}</strong>
+                                        <br />
+                                        {krogerPrice.canRetry && 'Please try again or enter manually below.'}
+                                        {!krogerPrice.canRetry && 'Please enter manually below.'}
+                                      </span>
+                                    </div>
+                                    {krogerPrice.canRetry && (
+                                      <button
+                                        type="button"
+                                        onClick={() => fetchKrogerPrice(item.name)}
+                                        className="btn-secondary btn-small retry-button"
+                                      >
+                                        🔄 Retry
+                                      </button>
+                                    )}
                                   </div>
                                 )}
                               </div>

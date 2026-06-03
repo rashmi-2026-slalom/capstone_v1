@@ -545,6 +545,9 @@ button {
 }
 
 .kroger-not-found {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   padding: 12px;
   background-color: #fef3c7;
   color: #92400e;
@@ -553,11 +556,36 @@ button {
 }
 
 .kroger-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px;
   background-color: #fee2e2;
   color: #991b1b;
   border-radius: 6px;
   border: 1px solid #fca5a5;
+}
+
+.error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.status-message {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.retry-button {
+  align-self: flex-start;
+  margin-top: 4px;
 }
 
 .price-form h4 {
