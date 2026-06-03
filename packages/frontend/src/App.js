@@ -22,6 +22,8 @@ function App() {
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
+  const [krogerPrice, setKrogerPrice] = useState(null);
+  const [loadingKrogerPrice, setLoadingKrogerPrice] = useState(false);
 
   // Fetch items on mount
   useEffect(() => {
@@ -175,6 +177,51 @@ function App() {
       date: new Date().toISOString().split('T')[0],
       notes: ''
     });
+    setKrogerPrice(null); // Reset Kroger price
+  };
+
+  const fetchKrogerPrice = async (itemName) => {
+    setLoadingKrogerPrice(true);
+    try {
+      // Search with higher limit to increase chances of finding Kroger products
+      const response = await fetch(`/api/products/search?q=${encodeURIComponent(itemName)}&limit=20`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch Kroger price');
+      }
+      const data = await response.json();
+      
+      // Find first Kroger product with a price
+      const krogerProduct = data.products.find(p => p.source === 'Kroger' && p.price);
+      
+      if (krogerProduct) {
+        setKrogerPrice({
+          price: krogerProduct.price,
+          regular_price: krogerProduct.regular_price,
+          on_sale: krogerProduct.on_sale,
+          size: krogerProduct.size,
+          store: krogerProduct.store,
+          promo_price: krogerProduct.promo_price
+        });
+      } else {
+        setKrogerPrice({ notFound: true });
+      }
+    } catch (err) {
+      console.error('Error fetching Kroger price:', err);
+      setKrogerPrice({ error: true, message: err.message });
+    } finally {
+      setLoadingKrogerPrice(false);
+    }
+  };
+
+  const handleUseKrogerPrice = () => {
+    if (krogerPrice && !krogerPrice.notFound && !krogerPrice.error) {
+      setPriceFormData(prev => ({
+        ...prev,
+        store_name: 'Kroger',
+        price: krogerPrice.price.toString(),
+        notes: krogerPrice.on_sale ? `On Sale! Regular: $${krogerPrice.regular_price} | Size: ${krogerPrice.size}` : `Size: ${krogerPrice.size}`
+      }));
+    }
   };
 
   const handlePriceFormChange = (field, value) => {
@@ -375,50 +422,106 @@ function App() {
                           </div>
 
                           {showPriceForm === item.id && (
-                            <form onSubmit={(e) => handleSubmitPrice(e, item.id)} className="price-form">
-                              <div className="price-form-grid">
-                                <input
-                                  type="text"
-                                  placeholder="Store name"
-                                  value={priceFormData.store_name}
-                                  onChange={(e) => handlePriceFormChange('store_name', e.target.value)}
-                                  required
-                                />
-                                <input
-                                  type="number"
-                                  placeholder="Price"
-                                  step="0.01"
-                                  min="0"
-                                  value={priceFormData.price}
-                                  onChange={(e) => handlePriceFormChange('price', e.target.value)}
-                                  required
-                                />
-                                <input
-                                  type="date"
-                                  value={priceFormData.date}
-                                  onChange={(e) => handlePriceFormChange('date', e.target.value)}
-                                  required
-                                />
-                                <input
-                                  type="text"
-                                  placeholder="Notes (optional)"
-                                  value={priceFormData.notes}
-                                  onChange={(e) => handlePriceFormChange('notes', e.target.value)}
-                                />
-                              </div>
-                              <div className="price-form-actions">
-                                <button type="submit" className="btn-primary btn-small">
-                                  Save Price
-                                </button>
+                            <div className="price-form-container">
+                              {/* Kroger Price Fetch Section */}
+                              <div className="kroger-price-section">
                                 <button
                                   type="button"
-                                  onClick={() => setShowPriceForm(null)}
-                                  className="btn-secondary btn-small"
+                                  onClick={() => fetchKrogerPrice(item.name)}
+                                  className="btn-primary btn-small"
+                                  disabled={loadingKrogerPrice}
                                 >
-                                  Cancel
+                                  {loadingKrogerPrice ? 'Loading...' : '🏪 Get Current Kroger Price'}
                                 </button>
+
+                                {krogerPrice && !krogerPrice.notFound && !krogerPrice.error && (
+                                  <div className="kroger-price-display">
+                                    <div className="kroger-price-info">
+                                      <div className="kroger-price-header">
+                                        <strong>Current Kroger Price:</strong>
+                                        {krogerPrice.on_sale && <span className="sale-badge">🔥 ON SALE!</span>}
+                                      </div>
+                                      <div className="kroger-price-details">
+                                        <div className="price-main">${krogerPrice.price.toFixed(2)}</div>
+                                        {krogerPrice.on_sale && (
+                                          <div className="price-compare">
+                                            Regular: <span className="strike">${krogerPrice.regular_price.toFixed(2)}</span>
+                                            <span className="savings">Save ${(krogerPrice.regular_price - krogerPrice.price).toFixed(2)}</span>
+                                          </div>
+                                        )}
+                                        <div className="price-size">Size: {krogerPrice.size}</div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={handleUseKrogerPrice}
+                                        className="btn-secondary btn-small"
+                                      >
+                                        Use This Price
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {krogerPrice && krogerPrice.notFound && (
+                                  <div className="kroger-not-found">
+                                    ℹ️ Kroger price not available. Please enter manually below.
+                                  </div>
+                                )}
+
+                                {krogerPrice && krogerPrice.error && (
+                                  <div className="kroger-error">
+                                    ⚠️ Error fetching Kroger price. Please enter manually below.
+                                  </div>
+                                )}
                               </div>
-                            </form>
+
+                              {/* Manual Price Entry Form */}
+                              <form onSubmit={(e) => handleSubmitPrice(e, item.id)} className="price-form">
+                                <h4>Or Enter Price Manually:</h4>
+                                <div className="price-form-grid">
+                                  <input
+                                    type="text"
+                                    placeholder="Store name"
+                                    value={priceFormData.store_name}
+                                    onChange={(e) => handlePriceFormChange('store_name', e.target.value)}
+                                    required
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Price"
+                                    step="0.01"
+                                    min="0"
+                                    value={priceFormData.price}
+                                    onChange={(e) => handlePriceFormChange('price', e.target.value)}
+                                    required
+                                  />
+                                  <input
+                                    type="date"
+                                    value={priceFormData.date}
+                                    onChange={(e) => handlePriceFormChange('date', e.target.value)}
+                                    required
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Notes (optional)"
+                                    value={priceFormData.notes}
+                                    onChange={(e) => handlePriceFormChange('notes', e.target.value)}
+                                  />
+                                </div>
+                                <div className="price-form-actions">
+                                  <button type="submit" className="btn-primary btn-small">
+                                    Save Price
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setShowPriceForm(null); setKrogerPrice(null); }}
+                                    className="btn-secondary btn-small"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
                           )}
 
                           {prices[item.id] && prices[item.id].length > 0 ? (
