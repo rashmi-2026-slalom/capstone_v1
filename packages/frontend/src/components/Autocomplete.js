@@ -188,9 +188,6 @@ function Autocomplete({
                         {suggestion.brand && (
                           <div className="suggestion-brand">{suggestion.brand}</div>
                         )}
-                        <div className="suggestion-source">
-                          from {suggestion.source}
-                        </div>
                       </div>
                     </div>
                   </li>

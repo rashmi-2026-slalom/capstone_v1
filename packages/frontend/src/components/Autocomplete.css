@@ -149,12 +149,6 @@
   white-space: nowrap;
 }
 
-.suggestion-source {
-  font-size: 11px;
-  color: #9ca3af;
-  font-style: italic;
-}
-
 /* Responsive Design */
 @media (max-width: 640px) {
   .autocomplete-suggestions {

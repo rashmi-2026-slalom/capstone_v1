@@ -168,6 +168,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0; /* Allow text truncation */
 }
 
 .item-info h3 {
@@ -175,11 +176,16 @@ button {
   font-size: 1.125rem;
   font-weight: 600;
   color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+  margin-left: auto; /* Always stay on the right */
 }
 
 /* Edit Form */
@@ -262,7 +268,7 @@ button {
 
   .item-actions {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end; /* Right-align buttons on mobile too */
   }
 }
 
