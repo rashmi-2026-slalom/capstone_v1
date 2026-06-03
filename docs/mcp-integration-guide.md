@@ -2,20 +2,164 @@
 
 ## Overview
 
-The Grocery Price Tracker now includes Model Context Protocol (MCP) integration for product search and autocomplete. This architecture provides a scalable way to connect to multiple product data sources.
+The Grocery Price Tracker implements the official **Model Context Protocol (MCP)** for product search and autocomplete. This enables GitHub Copilot to use the product search tools directly in your development environment.
 
 ## Architecture
 
 ```
-Frontend (React)
-    ↓
-Backend API (/api/products/*)
+GitHub Copilot
+    ↓ (JSON-RPC 2.0)
+MCP Server (http://localhost:3030/mcp)
     ↓
 ProductSearchService (Aggregator)
     ↓
 ├── OpenFoodFactsClient (ENABLED) ✓
 ├── KrogerClient (DISABLED - needs API credentials)
 └── InstacartClient (DISABLED - partner-only)
+```
+
+## What is MCP?
+
+**Model Context Protocol (MCP)** is an open protocol that standardizes how applications provide context to LLMs. It uses JSON-RPC 2.0 for communication and enables:
+
+- **Tools**: Functions that LLMs can call (e.g., product search)
+- **Resources**: Data sources LLMs can read (e.g., product databases)
+- **Prompts**: Templated interactions for common workflows
+
+Our implementation exposes product search functionality as MCP tools that GitHub Copilot can use.
+
+## MCP Configuration
+
+The MCP server is configured in `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "grocery-products": {
+      "type": "http",
+      "url": "http://localhost:3030/mcp",
+      "description": "Grocery product search across multiple data sources"
+    }
+  }
+}
+```
+
+This tells VS Code/Copilot where to find the MCP server.
+
+## Available MCP Tools
+
+GitHub Copilot can use these tools:
+
+### 1. `searchProducts`
+Search for grocery products across all data sources.
+
+**Parameters:**
+- `query` (string, required): Product name or search term
+- `limit` (number, optional): Max results (default: 10, max: 50)
+
+**Returns:** Products with **real-time prices** from Kroger (if enabled)
+
+**Example:**
+```json
+{
+  "name": "searchProducts",
+  "arguments": {
+    "query": "organic milk",
+    "limit": 5
+  }
+}
+```
+
+### 2. `getProductByBarcode`
+Look up a specific product by barcode (UPC/EAN).
+
+**Parameters:**
+- `barcode` (string, required): Product barcode
+
+**Example:**
+```json
+{
+  "name": "getProductByBarcode",
+  "arguments": {
+    "barcode": "737628064502"
+  }
+}
+```
+
+### 3. `getAvailableSources`
+List all product data sources and their status.
+
+**Parameters:** None
+
+**Example:**
+```json
+{
+  "name": "getAvailableSources",
+  "arguments": {}
+}
+```
+
+### 4. `searchKrogerLocations` ⭐ NEW
+Find Kroger store locations near a ZIP code.
+
+**Parameters:**
+- `zipCode` (string, required): ZIP code to search near
+- `limit` (number, optional): Max locations (default: 5)
+
+**Requires:** Kroger API credentials
+
+**Example:**
+```json
+{
+  "name": "searchKrogerLocations",
+  "arguments": {
+    "zipCode": "90210",
+    "limit": 3
+  }
+}
+```
+
+## MCP Protocol Endpoint
+
+The MCP server implements JSON-RPC 2.0 at:
+
+```
+POST http://localhost:3030/mcp
+```
+
+**Supported Methods:**
+- `initialize` - Initialize MCP connection
+- `tools/list` - List available tools
+- `tools/call` - Execute a tool
+- `resources/list` - List available resources
+- `resources/read` - Read a resource
+- `prompts/list` - List available prompts
+
+**Example Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {}
+}
+```
+
+**Example Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "searchProducts",
+        "description": "Search for grocery products...",
+        "inputSchema": { }
+      }
+    ]
+  }
+}
 ```
 
 ## Available MCP Sources
@@ -158,6 +302,47 @@ GET /api/products/barcode/:code
 curl "http://localhost:3030/api/products/barcode/737628064502"
 ```
 
+## Using with GitHub Copilot
+
+Once the MCP server is running, GitHub Copilot can use the product search tools in your VS Code environment.
+
+### Prerequisites
+
+1. Start the backend server:
+   ```bash
+   cd packages/backend
+   npm start
+   ```
+
+2. Verify MCP configuration exists at `.vscode/mcp.json`
+
+3. Restart VS Code to load the MCP server
+
+### Example Copilot Queries
+
+You can ask GitHub Copilot questions like:
+
+- **"Search for organic milk products"** - Copilot will use `searchProducts` tool
+- **"What products can I find for barcode 737628064502?"** - Copilot will use `getProductByBarcode` tool  
+- **"What product data sources are available?"** - Copilot will use `getAvailableSources` tool
+- **"Find me some breakfast cereal options"** - Copilot will search and return results
+
+### How It Works
+
+1. You ask Copilot a question about products
+2. Copilot recognizes it needs product data
+3. Copilot calls the MCP server using JSON-RPC 2.0
+4. The MCP server queries OpenFoodFacts and other sources
+5. Results are returned to Copilot
+6. Copilot formats the answer for you
+
+### Benefits
+
+- **No API keys needed** in your code - Copilot handles the MCP protocol
+- **Context-aware** - Copilot understands your codebase and can suggest relevant products
+- **Real data** - Access to millions of products from OpenFoodFacts
+- **Development productivity** - Get product data without leaving your editor
+
 ## Frontend Integration
 
 The autocomplete component is integrated into the "Add New Item" form:
@@ -184,12 +369,81 @@ The autocomplete component is integrated into the "Add New Item" form:
 
 ## Testing
 
-### Test MCP Sources
+### Test MCP Protocol (JSON-RPC 2.0)
+
+#### Test MCP Initialize
+```bash
+curl -X POST http://localhost:3030/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "1.0.0",
+      "clientInfo": {
+        "name": "test-client",
+        "version": "1.0.0"
+      }
+    }
+  }' | python3 -m json.tool
+```
+
+#### Test MCP Tools List
+```bash
+curl -X POST http://localhost:3030/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }' | python3 -m json.tool
+```
+
+#### Test MCP Product Search
+```bash
+curl -X POST http://localhost:3030/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "searchProducts",
+      "arguments": {
+        "query": "organic milk",
+        "limit": 5
+      }
+    }
+  }' | python3 -m json.tool
+```
+
+#### Test MCP Barcode Lookup
+```bash
+curl -X POST http://localhost:3030/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "getProductByBarcode",
+      "arguments": {
+        "barcode": "737628064502"
+      }
+    }
+  }' | python3 -m json.tool
+```
+
+### Test REST API Endpoints
+
+#### Test MCP Sources
 ```bash
 curl -s "http://localhost:3030/api/products/sources" | python3 -m json.tool
 ```
 
-### Test Product Search
+#### Test Product Search
 ```bash
 # Search for milk
 curl -s "http://localhost:3030/api/products/search?q=milk&limit=3" | python3 -m json.tool

@@ -407,4 +407,32 @@ app.get('/api/products/sources', (req, res) => {
   }
 });
 
+// MCP Protocol Endpoint (JSON-RPC 2.0)
+// This endpoint implements the official Model Context Protocol
+// for GitHub Copilot integration
+const mcpServer = require('./services/mcp/mcpServer');
+
+app.post('/mcp', async (req, res) => {
+  try {
+    const request = req.body;
+    console.log('[MCP] Received request:', JSON.stringify(request, null, 2));
+    
+    const response = await mcpServer.handleRequest(request);
+    console.log('[MCP] Sending response:', JSON.stringify(response, null, 2));
+    
+    res.json(response);
+  } catch (error) {
+    console.error('[MCP] Unhandled error:', error);
+    res.status(500).json({
+      jsonrpc: '2.0',
+      id: req.body?.id || null,
+      error: {
+        code: -32603,
+        message: 'Internal server error',
+        data: error.message
+      }
+    });
+  }
+});
+
 module.exports = { app, db };

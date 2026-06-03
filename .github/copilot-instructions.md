@@ -225,9 +225,39 @@ const result = insert.run(name);
 
 - ✅ Database schema created (items and prices tables)
 - ✅ Documentation complete (functional requirements, UI guidelines, coding guidelines)
-- 🚧 Backend API routes - In Progress
-- ⏳ Frontend UI - Not Started
+- ✅ Backend API routes complete
+- ✅ **MCP Integration** - Official Model Context Protocol implemented
+- ✅ **Kroger API** - Full implementation with OAuth2, real-time pricing
+- ✅ Product search service with OpenFoodFacts integration
+- 🚧 Frontend UI - In Progress
 - ⏳ Tests - Not Started
+
+## MCP & Kroger API Integration
+
+### Official Model Context Protocol
+This project implements the **official MCP specification** for GitHub Copilot integration:
+- JSON-RPC 2.0 protocol at `/mcp` endpoint
+- Tools: `searchProducts`, `getProductByBarcode`, `getAvailableSources`, `searchKrogerLocations`
+- Configuration: `.vscode/mcp.json`
+
+### Kroger API (Real-Time Pricing!)
+Fully implemented Kroger Developer API integration:
+- **OAuth2 authentication** with client credentials flow
+- **Product search** with real-time pricing by store location
+- **Barcode lookup** for specific products
+- **Store location search** by ZIP code
+- **Setup required**: Get credentials from https://developer.kroger.com/
+- **Documentation**: `docs/kroger-api-setup.md`
+
+**To enable Kroger:**
+1. Get credentials from Kroger Developer Portal
+2. Create `packages/backend/.env` with `KROGER_CLIENT_ID` and `KROGER_CLIENT_SECRET`
+3. Restart backend server
+
+**File locations:**
+- Implementation: `packages/backend/src/services/mcp/krogerClient.js`
+- MCP Server: `packages/backend/src/services/mcp/mcpServer.js`
+- Setup Guide: `docs/kroger-api-setup.md`
 
 ## Helpful Context
 

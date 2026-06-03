@@ -1,34 +1,58 @@
 # MCP Services
 
-Model Context Protocol (MCP) integration for product search across multiple data sources.
+Official Model Context Protocol (MCP) implementation for product search and GitHub Copilot integration.
 
 ## Overview
 
-This directory contains MCP client implementations that connect to external product databases and APIs. The architecture provides a standardized interface for querying product information from multiple sources.
+This directory implements the **official Model Context Protocol (MCP)** specification, enabling GitHub Copilot to use grocery product search as a native tool. The implementation follows JSON-RPC 2.0 protocol standards.
+
+## What is MCP?
+
+**Model Context Protocol** is an open standard for connecting AI assistants to data sources and tools. Our implementation exposes:
+
+- **Tools**: Product search functions Copilot can call
+- **Resources**: Access to product database information
+- **Prompts**: (Reserved for future use)
 
 ## Architecture Pattern
 
 ```
+GitHub Copilot (VS Code)
+    ↓ JSON-RPC 2.0
+MCP Server (/mcp endpoint)
+    ↓
 ProductSearchService (Aggregator)
-    ├── Queries all available MCP clients in parallel
-    ├── Aggregates and deduplicates results  
-    └── Returns unified product array
+    ↓
+├── Queries all available clients in parallel
+├── Aggregates and deduplicates results  
+└── Returns unified product array
 
-MCPClient (Base Class)
-    ├── Standardized interface methods
-    ├── Error handling
-    └── Product normalization
-
-Concrete Implementations:
-    ├── OpenFoodFactsClient ✓
+MCP Data Sources:
+    ├── OpenFoodFactsClient ✓ (2.8M+ products)
     ├── KrogerClient (placeholder)
     └── InstacartClient (placeholder)
 ```
 
 ## Files
 
+### `mcpServer.js` ⭐ NEW
+Official MCP server implementing JSON-RPC 2.0 protocol.
+
+**Implements:**
+- `initialize` - MCP connection handshake
+- `tools/list` - List available tools
+- `tools/call` - Execute tool functions
+- `resources/list` - List available resources
+- `resources/read` - Read resource data
+- `prompts/list` - List available prompts
+
+**Available Tools:**
+1. `searchProducts(query, limit)` - Search products by name
+2. `getProductByBarcode(barcode)` - Lookup by UPC/EAN
+3. `getAvailableSources()` - List data sources
+
 ### `mcpClient.js`
-Base class defining the MCP client interface. All product sources extend this class.
+Base class defining the client interface for external data sources.
 
 **Key Methods:**
 - `searchProducts(query)` - Search by text
